@@ -83,6 +83,8 @@ import com.metrolist.music.constants.SwipeThumbnailKey
 import com.metrolist.music.constants.ThumbnailCornerRadius
 import com.metrolist.music.listentogether.RoomRole
 import com.metrolist.music.ui.component.CastButton
+import com.metrolist.music.ui.component.GlassCard
+import com.metrolist.music.ui.component.GlassThumbnailCard
 import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.utils.rememberPreference
 import kotlinx.coroutines.delay
@@ -191,6 +193,7 @@ private fun getTextColor(playerBackground: PlayerBackgroundStyle): Color {
         PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
         PlayerBackgroundStyle.BLUR -> Color.White
         PlayerBackgroundStyle.GRADIENT -> Color.White
+        PlayerBackgroundStyle.GLASS -> Color.White
     }
 }
 
@@ -433,6 +436,10 @@ fun Thumbnail(
 /**
  * Header component showing "Now Playing" and queue/album title.
  */
+/**
+ * Header component showing "Now Playing" and queue/album title.
+ * Now with glass pill design for premium look
+ */
 @Composable
 private fun ThumbnailHeader(
     queueTitle: String?,
@@ -442,42 +449,57 @@ private fun ThumbnailHeader(
 ) {
     val listenTogetherManager = LocalListenTogetherManager.current
     val listenTogetherRoleState = listenTogetherManager?.role?.collectAsStateWithLifecycle(initialValue = RoomRole.NONE)
-    val isListenTogetherGuest = listenTogetherRoleState?.value == RoomRole.GUEST
+    val playerBackground by rememberEnumPreference(
+        key = PlayerBackgroundStyleKey,
+        defaultValue = PlayerBackgroundStyle.DEFAULT
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 48.dp)
+        GlassCard(
+            shape = RoundedCornerShape(50),
+            playerBackground = playerBackground,
+            elevation = 8.dp,
+            modifier = Modifier.fillMaxWidth(0.85f)
         ) {
-            // Listen Together indicator
-            if (listenTogetherRoleState?.value != RoomRole.NONE) {
-                Text(
-                    text = if (listenTogetherRoleState?.value == RoomRole.HOST) "Hosting Listen Together" else "Listening Together",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = textColor
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.now_playing),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = textColor
-                )
-            }
-            val playingFrom = queueTitle ?: albumTitle
-            if (!playingFrom.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = playingFrom,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = textColor.copy(alpha = 0.8f),
-                    maxLines = 1,
-                    modifier = Modifier.basicMarquee()
-                )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                // Listen Together indicator
+                if (listenTogetherRoleState?.value != RoomRole.NONE) {
+                    Text(
+                        text = if (listenTogetherRoleState?.value == RoomRole.HOST) "Hosting Listen Together" else "Listening Together",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = textColor
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.now_playing).uppercase(),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        ),
+                        color = textColor.copy(alpha = 0.9f)
+                    )
+                }
+                val playingFrom = queueTitle ?: albumTitle
+                if (!playingFrom.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = playingFrom,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = textColor.copy(alpha = 0.75f),
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee()
+                    )
+                }
             }
         }
     }
@@ -507,11 +529,17 @@ private fun ThumbnailItem(
     var skipMultiplier by remember { mutableIntStateOf(1) }
     var lastTapTime by remember { mutableLongStateOf(0L) }
 
+    // Player background for glass effect
+    val playerBackgroundForGlass by rememberEnumPreference(
+        key = PlayerBackgroundStyleKey,
+        defaultValue = PlayerBackgroundStyle.DEFAULT
+    )
+
     Box(
         modifier = modifier
             .then(
                 if (isLandscape) {
-                    Modifier.size(dimensions.thumbnailSize + (PlayerHorizontalPadding * 2))
+                    Modifier.size(dimensions.thumbnailSize + (PlayerHorizontalPadding * 2) + 24.dp)
                 } else {
                     Modifier
                         .width(dimensions.itemWidth)
@@ -556,33 +584,61 @@ private fun ThumbnailItem(
             },
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(dimensions.thumbnailSize)
-                .clip(RoundedCornerShape(dimensions.cornerRadius))
+        GlassThumbnailCard(
+            modifier = Modifier.size(dimensions.thumbnailSize),
+            shape = RoundedCornerShape(dimensions.cornerRadius),
+            cornerRadius = dimensions.cornerRadius,
+            playerBackground = playerBackgroundForGlass
         ) {
-            if (hidePlayerThumbnail) {
-                HiddenThumbnailPlaceholder(textBackgroundColor = textBackgroundColor)
-            } else {
-                val artworkUriToUse = if (item.mediaId == currentMediaId && !currentMediaThumbnail.isNullOrBlank()) {
-                    currentMediaThumbnail
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(dimensions.cornerRadius))
+            ) {
+                if (hidePlayerThumbnail) {
+                    HiddenThumbnailPlaceholder(textBackgroundColor = textBackgroundColor)
                 } else {
-                    item.mediaMetadata.artworkUri?.toString()
+                    val artworkUriToUse = if (item.mediaId == currentMediaId && !currentMediaThumbnail.isNullOrBlank()) {
+                        currentMediaThumbnail
+                    } else {
+                        item.mediaMetadata.artworkUri?.toString()
+                    }
+
+                    ThumbnailImage(
+                        artworkUri = artworkUriToUse,
+                        cropArtwork = cropAlbumArt
+                    )
                 }
 
-                ThumbnailImage(
-                    artworkUri = artworkUriToUse,
-                    cropArtwork = cropAlbumArt
+                // Subtle inner vignette for depth
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            androidx.compose.ui.graphics.Brush.radialGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.12f)
+                                ),
+                                radius = 800f
+                            )
+                        )
                 )
+
+                // Cast button at top-right corner of thumbnail - with glass mini background
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.Black.copy(alpha = 0.22f))
+                        .padding(4.dp)
+                ) {
+                    CastButton(
+                        tintColor = Color.White
+                    )
+                }
             }
-            
-            // Cast button at top-right corner of thumbnail
-            CastButton(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp),
-                tintColor = textBackgroundColor
-            )
         }
     }
 }

@@ -166,6 +166,8 @@ import com.metrolist.music.listentogether.RoomRole
 import com.metrolist.music.models.MediaMetadata
 import com.metrolist.music.ui.component.BottomSheet
 import com.metrolist.music.ui.component.BottomSheetState
+import com.metrolist.music.ui.component.GlassCard
+import com.metrolist.music.ui.component.GlassControlsCard
 import com.metrolist.music.ui.component.LocalBottomSheetPageState
 import com.metrolist.music.ui.component.LocalMenuState
 import com.metrolist.music.ui.component.Lyrics
@@ -253,7 +255,7 @@ fun BottomSheetPlayer(
     val shouldUseDarkButtonColors =
         remember(playerBackground, useDarkTheme) {
             when (playerBackground) {
-                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT -> true
+                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLASS -> true
                 PlayerBackgroundStyle.DEFAULT -> useDarkTheme
             }
         }
@@ -268,7 +270,7 @@ fun BottomSheetPlayer(
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
 
             when (playerBackground) {
-                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT -> {
+                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLASS -> {
                     insetsController.isAppearanceLightStatusBars = false
                 }
 
@@ -462,6 +464,7 @@ fun BottomSheetPlayer(
                 PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
                 PlayerBackgroundStyle.BLUR -> Color.White
                 PlayerBackgroundStyle.GRADIENT -> Color.White
+                PlayerBackgroundStyle.GLASS -> Color.White
             },
         label = "TextBackgroundColor",
     )
@@ -472,6 +475,7 @@ fun BottomSheetPlayer(
                 PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surface
                 PlayerBackgroundStyle.BLUR -> Color.Black
                 PlayerBackgroundStyle.GRADIENT -> Color.Black
+                PlayerBackgroundStyle.GLASS -> Color.Black
             },
         label = "icBackgroundColor",
     )
@@ -479,7 +483,8 @@ fun BottomSheetPlayer(
     val (textButtonColor, iconButtonColor) =
         when {
             playerBackground == PlayerBackgroundStyle.BLUR ||
-                playerBackground == PlayerBackgroundStyle.GRADIENT -> {
+                playerBackground == PlayerBackgroundStyle.GRADIENT ||
+                playerBackground == PlayerBackgroundStyle.GLASS -> {
                 when (playerButtonsStyle) {
                     PlayerButtonsStyle.DEFAULT -> {
                         Pair(Color.White, Color.Black)
@@ -532,7 +537,8 @@ fun BottomSheetPlayer(
     val (sideButtonContainerColor, sideButtonContentColor) =
         when {
             playerBackground == PlayerBackgroundStyle.BLUR ||
-                playerBackground == PlayerBackgroundStyle.GRADIENT -> {
+                playerBackground == PlayerBackgroundStyle.GRADIENT ||
+                playerBackground == PlayerBackgroundStyle.GLASS -> {
                 when (playerButtonsStyle) {
                     PlayerButtonsStyle.DEFAULT -> {
                         Pair(
@@ -815,7 +821,7 @@ fun BottomSheetPlayer(
 
     val bottomSheetBackgroundColor =
         when (playerBackground) {
-            PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT -> {
+            PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLASS -> {
                 MaterialTheme.colorScheme.surfaceContainer
             }
 
@@ -856,7 +862,7 @@ fun BottomSheetPlayer(
                                             ImageRequest
                                                 .Builder(context)
                                                 .data(thumbnailUrl)
-                                                .size(100, 100)
+                                                .size(120, 120)
                                                 .allowHardware(false)
                                                 .build(),
                                         contentDescription = null,
@@ -864,13 +870,38 @@ fun BottomSheetPlayer(
                                         modifier =
                                             Modifier
                                                 .fillMaxSize()
-                                                .blur(if (useDarkTheme) 150.dp else 100.dp),
+                                                .blur(if (useDarkTheme) 180.dp else 130.dp),
                                     )
+                                    // Enhanced glass overlay - darker for better glass contrast
                                     Box(
                                         modifier =
                                             Modifier
                                                 .fillMaxSize()
-                                                .background(Color.Black.copy(alpha = 0.3f)),
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.Black.copy(alpha = 0.25f),
+                                                            Color.Black.copy(alpha = 0.45f),
+                                                            Color.Black.copy(alpha = 0.35f)
+                                                        )
+                                                    )
+                                                ),
+                                    )
+                                    // Subtle glass highlight at top
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.White.copy(alpha = 0.08f),
+                                                            Color.Transparent,
+                                                            Color.Transparent
+                                                        ),
+                                                        endY = 400f
+                                                    )
+                                                ),
                                     )
                                 }
                             }
@@ -907,6 +938,83 @@ fun BottomSheetPlayer(
                                         .background(Brush.verticalGradient(colorStops = gradientColorStops))
                                         .background(Color.Black.copy(alpha = 0.2f)),
                                 )
+                            }
+                        }
+                    }
+
+                    PlayerBackgroundStyle.GLASS -> {
+                        AnimatedContent(
+                            targetState = mediaMetadata?.thumbnailUrl,
+                            transitionSpec = {
+                                fadeIn(tween(1000)).togetherWith(fadeOut(tween(1000)))
+                            },
+                            label = "glassBackground",
+                        ) { thumbnailUrl ->
+                            if (thumbnailUrl != null) {
+                                Box(modifier = Modifier.alpha(backgroundAlpha)) {
+                                    AsyncImage(
+                                        model =
+                                            ImageRequest
+                                                .Builder(context)
+                                                .data(thumbnailUrl)
+                                                .size(150, 150)
+                                                .allowHardware(false)
+                                                .build(),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .blur(if (useDarkTheme) 200.dp else 150.dp),
+                                    )
+                                    // Deep glass background - multiple layers for premium frosted effect
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.Black.copy(alpha = 0.20f),
+                                                            Color.Black.copy(alpha = 0.50f),
+                                                            Color.Black.copy(alpha = 0.40f)
+                                                        )
+                                                    )
+                                                ),
+                                    )
+                                    // Glass highlight layer
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .background(
+                                                    Brush.radialGradient(
+                                                        colors = listOf(
+                                                            Color.White.copy(alpha = 0.12f),
+                                                            Color.Transparent,
+                                                            Color.Black.copy(alpha = 0.15f)
+                                                        ),
+                                                        radius = 1200f
+                                                    )
+                                                ),
+                                    )
+                                    // Top shine for glass realism
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.White.copy(alpha = 0.10f),
+                                                            Color.Transparent,
+                                                            Color.Transparent
+                                                        ),
+                                                        endY = 500f
+                                                    )
+                                                ),
+                                    )
+                                }
                             }
                         }
                     }
@@ -1905,8 +2013,22 @@ fun BottomSheetPlayer(
                     ) {
                         Spacer(Modifier.weight(1f))
 
-                        mediaMetadata?.let {
-                            controlsContent(it)
+                        mediaMetadata?.let { meta ->
+                            GlassControlsCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                playerBackground = playerBackground,
+                                isDarkTheme = useDarkTheme
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 18.dp)
+                                ) {
+                                    controlsContent(meta)
+                                }
+                            }
                         }
 
                         Spacer(Modifier.weight(1f))
@@ -1957,11 +2079,26 @@ fun BottomSheetPlayer(
                         }
                     }
 
-                    mediaMetadata?.let {
-                        controlsContent(it)
+                    mediaMetadata?.let { meta ->
+                        GlassControlsCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .padding(bottom = 8.dp),
+                            playerBackground = playerBackground,
+                            isDarkTheme = useDarkTheme
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 18.dp)
+                            ) {
+                                controlsContent(meta)
+                            }
+                        }
                     }
 
-                    Spacer(Modifier.height(30.dp))
+                    Spacer(Modifier.height(16.dp))
                 }
             }
         }
@@ -2095,43 +2232,51 @@ fun InlineLyricsView(
         }
     }
 
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(12.dp)),
-        contentAlignment = Alignment.Center,
+    // Glass wrapper for lyrics - premium frosted effect
+    val isDarkTheme = isSystemInDarkTheme()
+    GlassControlsCard(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(24.dp),
+        isDarkTheme = isDarkTheme
     ) {
-        when {
-            lyrics == null -> {
-                ContainedLoadingIndicator()
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(24.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            when {
+                lyrics == null -> {
+                    ContainedLoadingIndicator()
+                }
 
-            lyrics == LyricsEntity.LYRICS_NOT_FOUND -> {
-                Text(
-                    text = stringResource(R.string.lyrics_not_found),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center,
-                )
-            }
-
-            else -> {
-                val lyricsContent: @Composable () -> Unit = {
-                    Lyrics(
-                        sliderPositionProvider = positionProvider,
-                        modifier = Modifier.padding(horizontal = 24.dp),
-                        showLyrics = showLyrics,
+                lyrics == LyricsEntity.LYRICS_NOT_FOUND -> {
+                    Text(
+                        text = stringResource(R.string.lyrics_not_found),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
                     )
                 }
-                ProvideTextStyle(
-                    value =
-                        MaterialTheme.typography.bodyMedium.copy(
+
+                else -> {
+                    val lyricsContent: @Composable () -> Unit = {
+                        Lyrics(
+                            sliderPositionProvider = positionProvider,
+                            modifier = Modifier.padding(horizontal = 24.dp),
+                            showLyrics = showLyrics,
+                        )
+                    }
+                    ProvideTextStyle(
+                        value = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center,
                         ),
-                ) {
-                    lyricsContent()
+                    ) {
+                        lyricsContent()
+                    }
                 }
             }
         }

@@ -327,7 +327,7 @@ fun AppearanceSettings(
 
     val availableBackgroundStyles =
         PlayerBackgroundStyle.entries.filter {
-            it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            (it != PlayerBackgroundStyle.BLUR && it != PlayerBackgroundStyle.GLASS) || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
         }
 
     val (defaultChip, onDefaultChipChange) =
@@ -556,6 +556,7 @@ fun AppearanceSettings(
                     PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
                     PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                     PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                    PlayerBackgroundStyle.GLASS -> "Glass" // Premium glassmorphism effect
                 }
             },
         )
@@ -1134,6 +1135,7 @@ fun AppearanceSettings(
                                     PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
                                     PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                                     PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                                    PlayerBackgroundStyle.GLASS -> "Glass"
                                 },
                             )
                         },

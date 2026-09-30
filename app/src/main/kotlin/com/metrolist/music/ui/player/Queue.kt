@@ -140,6 +140,8 @@ import com.metrolist.music.constants.SleepTimerFadeOutKey
 import com.metrolist.music.constants.SleepTimerStopAfterCurrentSongKey
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.material3.Button
+import com.metrolist.music.ui.component.GlassMiniButtonCard
+import androidx.compose.foundation.isSystemInDarkTheme
 
 
 @SuppressLint("UnrememberedMutableState")
@@ -1283,66 +1285,56 @@ private fun PlayerQueueButton(
     textBackgroundColor: Color,
     playerBackground: PlayerBackgroundStyle,
 ) {
-    val buttonModifier =
-        Modifier
-            .clip(shape)
-            .clickable(enabled = enabled, onClick = onClick)
+    val isDark = isSystemInDarkTheme()
+    val alphaFactor = if (enabled) 1f else 0.45f
 
-    val alphaFactor = if (enabled) 1f else 0.35f
-
-    val appliedModifier =
-        if (isActive) {
-            modifier.then(buttonModifier.background(textButtonColor)).alpha(alphaFactor)
-        } else {
-            modifier
-                .then(
-                    buttonModifier.border(
-                        width = 1.dp,
-                        color = textButtonColor.copy(alpha = 0.3f),
-                        shape = shape,
-                    ),
-                ).alpha(alphaFactor)
-        }
-
-    Box(
-        modifier = appliedModifier,
-        contentAlignment = Alignment.Center,
+    GlassMiniButtonCard(
+        modifier = modifier.alpha(alphaFactor),
+        shape = shape,
+        isActive = isActive,
+        playerBackground = playerBackground,
+        isDarkTheme = isDark
     ) {
-        if (text != null) {
-            Text(
-                text = text,
-                color = iconButtonColor.copy(alpha = if (enabled) 1f else 0.6f),
-                fontSize = 10.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier =
-                    Modifier
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape)
+                .clickable(enabled = enabled, onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) {
+            if (text != null) {
+                Text(
+                    text = text,
+                    color = if (isActive) iconButtonColor.copy(alpha = if (enabled) 1f else 0.6f)
+                    else when (playerBackground) {
+                        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLASS -> Color.White
+                        PlayerBackgroundStyle.DEFAULT -> if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
+                    }.copy(alpha = if (enabled) 1f else 0.6f),
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
                         .fillMaxWidth()
                         .basicMarquee(),
-            )
-        } else {
-            val baseTint =
-                if (isActive) {
+                )
+            } else {
+                val baseTint = if (isActive) {
                     iconButtonColor
                 } else {
                     when (playerBackground) {
-                        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT -> {
-                            Color.White
-                        }
-
-                        PlayerBackgroundStyle.DEFAULT -> {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        }
+                        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLASS -> Color.White
+                        PlayerBackgroundStyle.DEFAULT -> if (isDark) Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     }
                 }
-            val finalTint = if (enabled) baseTint else baseTint.copy(alpha = 0.5f)
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                modifier = Modifier.size(iconSize),
-                tint = finalTint,
-            )
+                val finalTint = if (enabled) baseTint else baseTint.copy(alpha = 0.5f)
+                Icon(
+                    painter = painterResource(id = icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize),
+                    tint = finalTint,
+                )
+            }
         }
     }
 }
